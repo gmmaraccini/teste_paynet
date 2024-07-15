@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+    laravel:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: laravel_app
+        ports:
+            - "8000:8000"
+        volumes:
+            - .:/app
+        environment:
+            - LARAVEL_DATABASE_HOST=mysql
+            - LARAVEL_DATABASE_PORT=3306
+            - LARAVEL_DATABASE_NAME=laravel
+            - LARAVEL_DATABASE_USER=laravel
+            - LARAVEL_DATABASE_PASSWORD=secret
+        networks:
+            - laravel
+        depends_on:
+            - mysql
+        command: >
+            /bin/bash -c "
+            php artisan vendor:publish --provider=\"Laravel\\Sanctum\\SanctumServiceProvider\" &&
+            php artisan migrate &&
+            /opt/bitnami/scripts/laravel/entrypoint.sh /opt/bitnami/scripts/laravel/run.sh
+            "
+
+    mysql:
+        image: mysql:5.7
+        container_name: laravel_mysql
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: laravel
+            MYSQL_USER: laravel
+            MYSQL_PASSWORD: secret
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - laravel
+
+volumes:
+    mysql_data:
+
+networks:
+    laravel:
