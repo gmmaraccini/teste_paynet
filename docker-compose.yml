@@ -2,29 +2,35 @@ version: '3.8'
 
 services:
     laravel:
-        build:
-            context: .
-            dockerfile: Dockerfile
+        image: laravelsail/php80-composer
         container_name: laravel_app
         ports:
             - "8000:8000"
         volumes:
-            - .:/app
+            - .:/var/www/html
         environment:
-            - LARAVEL_DATABASE_HOST=mysql
-            - LARAVEL_DATABASE_PORT=3306
-            - LARAVEL_DATABASE_NAME=laravel
-            - LARAVEL_DATABASE_USER=laravel
-            - LARAVEL_DATABASE_PASSWORD=secret
+            - DB_CONNECTION=mysql
+            - DB_HOST=laravel_mysql
+            - DB_PORT=3306
+            - DB_DATABASE=laravel
+            - DB_USERNAME=laravel
+            - DB_PASSWORD=secret
         networks:
             - laravel
         depends_on:
             - mysql
         command: >
             /bin/bash -c "
+            apt-get update && apt-get install -y netcat &&
+            echo 'Waiting for MySQL...' &&
+            while ! nc -z laravel_mysql 3306; do
+              echo 'MySQL is unavailable - sleeping'
+              sleep 2
+            done &&
+            echo 'MySQL is up - executing commands' &&
             php artisan vendor:publish --provider=\"Laravel\\Sanctum\\SanctumServiceProvider\" &&
             php artisan migrate &&
-            /opt/bitnami/scripts/laravel/entrypoint.sh /opt/bitnami/scripts/laravel/run.sh
+            php artisan serve --host=0.0.0.0 --port=8000
             "
 
     mysql:
@@ -41,6 +47,11 @@ services:
             - mysql_data:/var/lib/mysql
         networks:
             - laravel
+        healthcheck:
+            test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
 volumes:
     mysql_data:
