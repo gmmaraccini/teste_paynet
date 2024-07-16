@@ -1,33 +1,28 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
 
-class Usuario extends Authenticatable
+class Usuario extends Authenticatable implements CanResetPassword
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use Notifiable, CanResetPasswordTrait;
 
     protected $table = 'usuarios';
 
     protected $fillable = [
-        'nome_completo',
-        'senha',
-        'email',
-        'password',
-        'cep',
-        'rua',
-        'bairro',
-        'numero',
-        'cidade',
-        'estado',
+        'nome_completo', 'email', 'senha', 'rua', 'bairro', 'numero', 'cidade', 'estado', 'cep',
     ];
 
     protected $hidden = [
-        'password',
-        'remember_token',
+        'senha', 'remember_token',
     ];
+
+    public function getAuthPassword()
+    {
+        return $this->senha;
+    }
 }
